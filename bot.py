@@ -1,20 +1,26 @@
 import asyncio
-import json
 import logging
 import random
+import json
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+# -----------------------------
+#       ЗАГРУЗКА .ENV
+# -----------------------------
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
-# ==========================================
-#                НАСТРОЙКИ
-# ==========================================
-
-BOT_TOKEN = "8509439078:AAE0PBI_gzetGm21SauqceAQ8a_km9NNAe8"
-OWNER_ID = 128055849
+# -----------------------------
+#       НАСТРОЙКА ЛОГЕРОВ
+# -----------------------------
+logging.basicConfig(level=logging.INFO)
 
 DATA_FILE = "wish_users.json"
 
@@ -127,19 +133,17 @@ STYLES = ["default", "soft", "bold"]
 # ==========================================
 
 def load_data():
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
+    if not os.path.exists(DATA_FILE):
         return {}
-
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 users = load_data()
+
 
 
 # ==========================================
@@ -426,4 +430,3 @@ async def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
-
