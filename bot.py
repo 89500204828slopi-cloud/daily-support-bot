@@ -13,7 +13,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 #                НАСТРОЙКИ
 # ==========================================
 
-BOT_TOKEN = "8509439078:AAGBp9p3ha-wPAAOCUv7y0NpAJlUBPDQZhA"
+BOT_TOKEN = "8509439078:AAE0PBI_gzetGm21SauqceAQ8a_km9NNAe8"
 OWNER_ID = 128055849
 
 DATA_FILE = "wish_users.json"
@@ -426,3 +426,4 @@ async def main():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
+
