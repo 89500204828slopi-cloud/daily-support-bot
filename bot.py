@@ -127,7 +127,8 @@ async def process_get_wish(query: CallbackQuery):
         return
 
     # ✨ Выдаём новое пожелание
-    wish = WISHES[now.day % len(WISHES)]
+    import random
+    wish = random.choice(WISHES)
 
     # Обновление общей статистики
     user["last_wish_date"] = now.isoformat()
@@ -165,4 +166,5 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
