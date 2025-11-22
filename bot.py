@@ -88,9 +88,11 @@ def can_get_today_wish(user_data, now):
 # Кнопка “Получить пожелание”
 # ---------------------------------------------------------
 def main_menu():
-    kb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Получить пожелание ✨", callback_data="get_wish")]
-    ])
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✨ Получить пожелание", callback_data="get_wish")]
+        ]
+    )
     return kb
 
 
@@ -111,55 +113,47 @@ async def cmd_start(message: types.Message):
 # Обработка кнопки “Получить пожелание”
 # ---------------------------------------------------------
 @dp.callback_query(lambda q: q.data == "get_wish")
-async def give_wish(query: types.CallbackQuery):
-    user_id = str(query.from_user.id)
+async def process_get_wish(query: CallbackQuery):
+    user_id = query.from_user.id
+    data = load_user_data(user_id)
     now = datetime.now()
 
-    data = load_data()
-    user_data = data.get(user_id, {})
-
-    # Особый режим — владелец без кулдауна
-    if query.from_user.id == OWNER_ID:
-        can_get = True
-        remaining = None
-    else:
-        can_get, remaining = can_get_today_wish(user_data, now)
-
-    # Если пожелание можно получить — выдаём новое
-    if can_get:
-        wish = WISHES[now.day % len(WISHES)]
-
-        # Записываем информацию
-        user_data["last_wish_time"] = now.isoformat()
-        user_data["last_wish"] = wish
-
-        # стрик
-        last_time = user_data.get("last_wish_time_prev")
-        if last_time:
-            last_dt = datetime.fromisoformat(last_time)
-            # если вчера — +1 стрик
-            if last_dt.date() == (now.date() - timedelta(days=1)):
-                user_data["streak"] = user_data.get("streak", 0) + 1
-            else:
-                user_data["streak"] = 1
-        else:
-            user_data["streak"] = 1
-
-        user_data["last_wish_time_prev"] = user_data["last_wish_time"]
-
-        # общее количество
-        user_data["total"] = user_data.get("total", 0) + 1
-
-        data[user_id] = user_data
-        save_data(data)
+    # Проверяем: получал ли уже сегодня
+    if data["last_wish_date"] == now.strftime("%Y-%m-%d"):
+        # Уже получал → показываем сохранённое пожелание
+        wish = data.get("last_wish_text", "Пожелание отсутствует 🤔")
 
         await query.message.answer(
-            f"✨ Пожелание:\n\n"
+            f"Пожелание на сегодня уже получено:\n\n"
             f"«{wish}»\n\n"
-            f"🔥 Стрик: {user_data['streak']} дней подряд\n"
-            f"📊 Всего пожеланий: {user_data['total']}"
+            f"Возвращайся завтра 💛",
+            reply_markup=main_menu()
         )
         return
+
+    # Если ещё нет — выдаём новое
+    wish = get_wish_text()  # берём случайное пожелание
+    data["last_wish_date"] = now.strftime("%Y-%m-%d")
+    data["last_wish_text"] = wish
+    data["total_wishes"] += 1
+
+    # Логика стрика
+    last_date = datetime.strptime(data["last_streak_date"], "%Y-%m-%d") if data["last_streak_date"] else None
+    if last_date and (now.date() - last_date.date()).days == 1:
+        data["streak"] += 1
+    else:
+        data["streak"] = 1
+
+    data["last_streak_date"] = now.strftime("%Y-%m-%d")
+    save_user_data(user_id, data)
+
+    await query.message.answer(
+        f"«{wish}»\n\n"
+        f"🔥 Стрик: {data['streak']} дней подряд\n"
+        f"📊 Всего пожеланий: {data['total_wishes']}",
+        reply_markup=main_menu()
+    )
+
 
     # Если уже получал сегодня → показываем старое
     old_wish = user_data.get("last_wish", "Пожелание отсутствует.")
